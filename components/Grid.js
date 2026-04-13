@@ -1,13 +1,9 @@
-import PropTypes from 'prop-types';
-import Card from '@/components/Card';
-import { ExclamationIcon } from '@heroicons/react/outline';
+import PropTypes from "prop-types";
+import Card from "@/components/Card";
+import { ExclamationIcon } from "@heroicons/react/outline";
 
-const Grid = ({ homes = [] }) => {
+const Grid = ({ homes = [], onClickFavorite }) => {
   const isEmpty = homes.length === 0;
-
-  const toggleFavorite = async id => {
-    // TODO: Add/remove home from the authenticated user's favorites
-  };
 
   return isEmpty ? (
     <p className="text-amber-700 bg-amber-100 px-4 rounded-md py-2 max-w-max inline-flex items-center space-x-1">
@@ -16,8 +12,13 @@ const Grid = ({ homes = [] }) => {
     </p>
   ) : (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {homes.map(home => (
-        <Card key={home.id} {...home} onClickFavorite={toggleFavorite} />
+      {homes.map((home) => (
+        <Card
+          key={home.id}
+          {...home}
+          favorite={home.favorite}
+          onClickFavorite={onClickFavorite}
+        />
       ))}
     </div>
   );
@@ -25,6 +26,7 @@ const Grid = ({ homes = [] }) => {
 
 Grid.propTypes = {
   homes: PropTypes.array,
+  onClickFavorite: PropTypes.func,
 };
 
 export default Grid;
