@@ -3,6 +3,7 @@ import Layout from "@/components/Layout";
 import Grid from "@/components/Grid";
 import FilterPanel from "@/components/FilterPanel";
 import { FilterIcon } from "@heroicons/react/outline";
+import toast from "react-hot-toast";
 
 const sampleData = [
   {
@@ -54,7 +55,7 @@ const sampleData = [
 const FAVORITES_KEY = "home_favorites";
 
 export default function Home() {
-  const [allHomes, setAllHomes] = useState(sampleData);
+  const [allHomes] = useState(sampleData);
   const [filteredHomes, setFilteredHomes] = useState(sampleData);
   const [favorites, setFavorites] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
@@ -69,7 +70,6 @@ export default function Home() {
     baths: 0,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -93,8 +93,8 @@ export default function Home() {
         setFavorites(JSON.parse(saved));
       }
     } catch (e) {
-      console.error("Failed to load favorites:", e);
-    }
+        console.error("Failed to load favorites:", e);
+      }
   }, [isClient]);
 
   const saveFavorites = (newFavorites) => {
@@ -111,70 +111,96 @@ export default function Home() {
       ? favorites.filter((fav) => fav !== id)
       : [...favorites, id];
     saveFavorites(newFavorites);
+    toast.success(
+      newFavorites.includes(id)
+        ? "Added to favorites"
+        : "Removed from favorites"
+    );
   };
 
-  const applyFilters = () => {
+  const applyFilters = (filterParams) => {
     setLoading(true);
-    setError(null);
 
     try {
       const errors = [];
 
-      if (filters.priceMin < 0) {
+      if (filterParams.priceMin < 0) {
         errors.push("priceMin must be a non-negative number");
       }
-      if (filters.priceMax < 0) {
+      if (filterParams.priceMax < 0) {
         errors.push("priceMax must be a non-negative number");
       }
-      if (filters.priceMin > filters.priceMax) {
+      if (filterParams.priceMin > filterParams.priceMax) {
         errors.push("priceMin cannot be greater than priceMax");
       }
-      if (filters.guests < 0 || !Number.isInteger(filters.guests)) {
+      if (
+        filterParams.guests < 0 ||
+        !Number.isInteger(filterParams.guests)
+      ) {
         errors.push("guests must be a non-negative integer");
       }
-      if (filters.beds < 0 || !Number.isInteger(filters.beds)) {
+      if (filterParams.beds < 0 || !Number.isInteger(filterParams.beds)) {
         errors.push("beds must be a non-negative integer");
       }
-      if (filters.baths < 0 || !Number.isInteger(filters.baths)) {
+      if (filterParams.baths < 0 || !Number.isInteger(filterParams.baths)) {
         errors.push("baths must be a non-negative integer");
       }
 
       if (errors.length > 0) {
-        setError(errors.join(", "));
+        toast.error(errors.join(", "));
         setLoading(false);
         return;
       }
 
       let result = [...allHomes];
 
-      if (filters.priceMin > 0) {
-        result = result.filter((home) => home.price >= filters.priceMin);
+      if (filterParams.priceMin > 0) {
+        result = result.filter(
+          (home) => home.price >= filterParams.priceMin
+        );
       }
-      if (filters.priceMax < 10000) {
-        result = result.filter((home) => home.price <= filters.priceMax);
+      if (filterParams.priceMax < 10000) {
+        result = result.filter(
+          (home) => home.price <= filterParams.priceMax
+        );
       }
-      if (filters.guests > 0) {
-        result = result.filter((home) => home.guests >= filters.guests);
+      if (filterParams.guests > 0) {
+        result = result.filter(
+          (home) => home.guests >= filterParams.guests
+        );
       }
-      if (filters.beds > 0) {
-        result = result.filter((home) => home.beds >= filters.beds);
+      if (filterParams.beds > 0) {
+        result = result.filter(
+          (home) => home.beds >= filterParams.beds
+        );
       }
-      if (filters.baths > 0) {
-        result = result.filter((home) => home.baths >= filters.baths);
+      if (filterParams.baths > 0) {
+        result = result.filter(
+          (home) => home.baths >= filterParams.baths
+        );
       }
 
       setFilteredHomes(result);
+      toast.success(`Found ${result.length} listing(s)`);
     } catch (e) {
       console.error("Filter error:", e);
-      setError("Failed to apply filters");
+      toast.error("Failed to apply filters");
     } finally {
       setLoading(false);
     }
   };
 
   const resetFilters = () => {
+    const resetParams = {
+      priceMin: 0,
+      priceMax: 10000,
+      guests: 0,
+      beds: 0,
+      baths: 0,
+    };
+    setFilters(resetParams);
     setFilteredHomes(allHomes);
-    setError(null);
+    toast.success("Filters reset");
   };
 
   const getDisplayHomes = () => {
@@ -239,12 +265,6 @@ export default function Home() {
           </button>
         ) : null}
       </div>
-
-      {error && (
-        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{error}</p>
-        </div>
-      )}
 
       {!isMobile && (
         <div className="mb-6">
